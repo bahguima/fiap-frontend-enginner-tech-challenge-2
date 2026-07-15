@@ -8,7 +8,7 @@ services:
     environment:
       NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
     ports:
-      - "3001:3001"
+      - "${DASHBOARD_PORT:-3001}:3001"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
       interval: 5s
@@ -37,7 +37,7 @@ services:
       dashboard-remote:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${SHELL_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 5s
