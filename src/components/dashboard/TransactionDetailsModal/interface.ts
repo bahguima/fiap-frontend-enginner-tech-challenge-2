@@ -1,4 +1,4 @@
-import type { Transaction } from "@/data/transactions";
+import type { Transaction } from "@/api/contracts";
 
 export interface TransactionDetailsModalProps {
   open: boolean;

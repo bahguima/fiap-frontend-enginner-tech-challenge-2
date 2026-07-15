@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Transaction } from "@/data/transactions";
+import type { Transaction } from "@/api/contracts";
 import type { TransactionDialog, TransactionDialogsState } from "./interface";
 
 export function useTransactionDialogs(): TransactionDialogsState {

@@ -1,86 +1,56 @@
-import type { Transaction } from "@/data/transactions";
+import type { Transaction, TransactionInput } from "@/api/contracts";
 import {
-  calculateTransactionSummary,
-  createTransactionFromForm,
-  getEditableCategory,
+  getDefaultTransactionFormValues,
+  getTransactionFormValues,
   transactionFormSchema,
-  updateTransactionFromForm,
 } from "@/lib/transactions";
-import type { TransactionFormValues } from "@/lib/transactions";
 
-const formValues: TransactionFormValues = {
+const formInput: TransactionInput = {
   description: "Pagamento de aluguel",
   type: "expense",
-  category: "Pagamento",
+  categoryId: "payment",
   amount: 1500,
   date: "2026-05-03",
   status: "completed",
 };
 
-describe("transaction helpers", () => {
-  it("creates expense transactions with negative amount", () => {
-    const transaction = createTransactionFromForm(formValues, "transaction-1");
+const transaction: Transaction = {
+  id: "transaction-1",
+  description: "Pagamento de aluguel",
+  amount: -1500,
+  formattedAmount: "-R$ 1.500,00",
+  type: "expense",
+  typeLabel: "Saída",
+  category: { id: "payment", name: "Pagamento" },
+  date: "2026-05-03",
+  formattedDate: "2026-05-03",
+  status: "completed",
+  statusLabel: "Concluído",
+  attachmentsCount: 0,
+  formInput,
+};
 
-    expect(transaction).toMatchObject({
-      id: "transaction-1",
-      description: "Pagamento de aluguel",
-      amount: -1500,
-      type: "expense",
-      category: "Pagamento",
-      date: "2026-05-03",
-      status: "completed",
-    });
-  });
-
-  it("updates a transaction while preserving its id", () => {
-    const transaction: Transaction = {
-      id: "transaction-1",
-      description: "Pagamento de aluguel",
-      amount: -1500,
-      type: "expense",
-      category: "Pagamento",
-      date: "2026-05-03",
-      status: "completed",
-    };
-
-    const updated = updateTransactionFromForm(transaction, {
-      ...formValues,
-      description: "Depósito recebido",
-      type: "income",
-      category: "Depósito",
-      amount: 900,
-    });
-
-    expect(updated.id).toBe("transaction-1");
-    expect(updated.amount).toBe(900);
-    expect(updated.type).toBe("income");
-    expect(updated.description).toBe("Depósito recebido");
-  });
-
-  it("calculates income, expenses and current balance", () => {
-    const summary = calculateTransactionSummary([
-      createTransactionFromForm({ ...formValues, type: "income", category: "Depósito", amount: 2500 }, "1"),
-      createTransactionFromForm({ ...formValues, type: "expense", amount: 800 }, "2"),
-    ]);
-
-    expect(summary).toEqual({
-      totalIncome: 2500,
-      totalExpense: 800,
-      balance: 1700,
-    });
-  });
-
-  it("validates transaction form data with zod", () => {
-    const result = transactionFormSchema.safeParse({
-      ...formValues,
-      amount: "250.5",
-    });
+describe("helpers do formulário de transações", () => {
+  it("valida e converte o valor informado no formulário", () => {
+    const result = transactionFormSchema.safeParse({ ...formInput, amount: "250.5" });
 
     expect(result.success).toBe(true);
     expect(result.success && result.data.amount).toBe(250.5);
   });
 
-  it("falls back to Outro for categories outside the editable list", () => {
-    expect(getEditableCategory("Salary")).toBe("Outro");
+  it("usa os dados editáveis preparados pelo backend", () => {
+    expect(getTransactionFormValues(transaction)).toEqual(formInput);
+  });
+
+  it("cria os valores padrão sem armazenar dados remotos", () => {
+    expect(getDefaultTransactionFormValues()).toEqual(
+      expect.objectContaining({
+        description: "",
+        type: "income",
+        categoryId: "deposit",
+        amount: 0,
+        status: "completed",
+      }),
+    );
   });
 });

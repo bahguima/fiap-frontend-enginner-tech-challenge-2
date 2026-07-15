@@ -1,6 +1,6 @@
 import type * as React from "react";
 
-import type { Transaction } from "@/data/transactions";
+import type { Transaction } from "@/api/contracts";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 export type TransactionDialog = "create" | "details" | "edit" | "delete" | null;

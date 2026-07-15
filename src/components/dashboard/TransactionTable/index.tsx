@@ -69,8 +69,8 @@ export function TransactionTable({ "data-testid": dataTestId, data, onView, onEd
                   </TypeIconBox>
                   {transaction.description}
                 </TransactionCell>
-                <MutedCell>{transaction.category}</MutedCell>
-                <MutedCell>{transaction.date}</MutedCell>
+                <MutedCell>{transaction.category.name}</MutedCell>
+                <MutedCell>{transaction.formattedDate}</MutedCell>
                 <BodyCell>
                   <Status>
                     <StatusIcon status={transaction.status} />
@@ -78,7 +78,7 @@ export function TransactionTable({ "data-testid": dataTestId, data, onView, onEd
                   </Status>
                 </BodyCell>
                 <AmountCell $type={transaction.type}>
-                  {transaction.type === "income" ? "+" : "-"}R$ {Math.abs(transaction.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  {transaction.formattedAmount}
                 </AmountCell>
                 {hasActions && (
                   <ActionsCell>
@@ -101,12 +101,12 @@ export function TransactionTable({ "data-testid": dataTestId, data, onView, onEd
               <div>
                 <MobileDescription>{transaction.description}</MobileDescription>
                 <MobileMeta>
-                  {transaction.category} · {transaction.date}
+                  {transaction.category.name} · {transaction.formattedDate}
                 </MobileMeta>
               </div>
             </MobileItemInfo>
             <MobileAmount $type={transaction.type}>
-              {transaction.type === "income" ? "+" : "-"}R$ {Math.abs(transaction.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              {transaction.formattedAmount}
             </MobileAmount>
             {hasActions && (
               <TransactionActionsMenu transaction={transaction} onView={onView} onEdit={onEdit} onDelete={onDelete} />

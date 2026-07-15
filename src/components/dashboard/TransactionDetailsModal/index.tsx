@@ -7,12 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  formatSignedCurrency,
-  getTransactionStatusLabel,
-  getTransactionTypeLabel,
-} from "@/lib/transactions";
-
 import type { TransactionDetailsModalProps } from "./interface";
 import { DetailsLabel, DetailsList, DetailsRow, DetailsValue } from "./styled";
 
@@ -36,23 +30,23 @@ export function TransactionDetailsModal({ open, transaction, onOpenChange }: Tra
           </DetailsRow>
           <DetailsRow>
             <DetailsLabel>Categoria</DetailsLabel>
-            <DetailsValue>{transaction.category}</DetailsValue>
+            <DetailsValue>{transaction.category.name}</DetailsValue>
           </DetailsRow>
           <DetailsRow>
             <DetailsLabel>Tipo</DetailsLabel>
-            <DetailsValue>{getTransactionTypeLabel(transaction.type)}</DetailsValue>
+            <DetailsValue>{transaction.typeLabel}</DetailsValue>
           </DetailsRow>
           <DetailsRow>
             <DetailsLabel>Data</DetailsLabel>
-            <DetailsValue>{transaction.date}</DetailsValue>
+            <DetailsValue>{transaction.formattedDate}</DetailsValue>
           </DetailsRow>
           <DetailsRow>
             <DetailsLabel>Status</DetailsLabel>
-            <DetailsValue>{getTransactionStatusLabel(transaction.status)}</DetailsValue>
+            <DetailsValue>{transaction.statusLabel}</DetailsValue>
           </DetailsRow>
           <DetailsRow>
             <DetailsLabel>Valor</DetailsLabel>
-            <DetailsValue>{formatSignedCurrency(transaction)}</DetailsValue>
+            <DetailsValue>{transaction.formattedAmount}</DetailsValue>
           </DetailsRow>
         </DetailsList>
       </DialogContent>
