@@ -42,6 +42,7 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
+    "dashboard-remote",
     "node_modules"
   ]
 }

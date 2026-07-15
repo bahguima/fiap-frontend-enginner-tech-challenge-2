@@ -28,3 +28,9 @@ export const FieldError = styled.p`
   color: hsl(var(--destructive));
   font-size: 0.75rem;
 `;
+
+export const FieldHint = styled.p`
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+`;

@@ -5,13 +5,14 @@ import { ArrowDownLeft, ArrowUpRight, Plus, TrendingUp, Wallet } from "lucide-re
 import { Bar } from "react-chartjs-2";
 import { DeleteTransactionModal } from "@/components/dashboard/DeleteTransactionModal";
 import { TransactionDetailsModal } from "@/components/dashboard/TransactionDetailsModal";
+import { TransactionQueryState } from "@/components/dashboard/TransactionQueryState";
 import { TransactionTable } from "@/components/dashboard/TransactionTable";
 import { TransactionFormModal } from "@/components/form/TransactionFormModal";
 import { Button } from "@/components/ui/button";
-import { monthlyData } from "@/data/transactions";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useTransactions } from "@/contexts/TransactionsContext";
+import { useTransactionMutations, useTransactionsDashboardQuery } from "@/features/transactions/hooks";
 import { useTransactionDialogs } from "@/hooks/use-transaction-dialogs";
 import { getChartColors } from "@/lib/chart-theme";
 import type { TransactionFormValues } from "@/lib/transactions";
@@ -32,25 +33,28 @@ import {
 export default function OverviewPage() {
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const { transactions, summary, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
+  const { accessToken } = useAuth();
+  const dashboardQuery = useTransactionsDashboardQuery(accessToken);
+  const { createTransaction, updateTransaction, deleteTransaction } = useTransactionMutations(accessToken);
+  const dashboard = dashboardQuery.data;
   const { dialog, selectedTransaction, openCreate, openDetails, openEdit, openDelete, closeDialog } = useTransactionDialogs();
 
   const { data: chartData, options: chartOptions } = useMemo(() => {
     const colors = getChartColors(theme);
     return {
       data: {
-        labels: monthlyData.map((item) => item.month),
+        labels: dashboard?.chart.labels ?? [],
         datasets: [
           {
             label: t("dash.income"),
-            data: monthlyData.map((item) => item.income),
+            data: dashboard?.chart.income ?? [],
             backgroundColor: colors.income,
             borderRadius: 6,
             borderSkipped: false,
           },
           {
             label: t("dash.expenses"),
-            data: monthlyData.map((item) => item.expense),
+            data: dashboard?.chart.expense ?? [],
             backgroundColor: colors.expense,
             borderRadius: 6,
             borderSkipped: false,
@@ -77,27 +81,39 @@ export default function OverviewPage() {
         },
       },
     };
-  }, [theme, t]);
+  }, [dashboard, theme, t]);
+
+  if (dashboardQuery.isPending) {
+    return <TransactionQueryState type="loading" />;
+  }
+
+  if (dashboardQuery.isError || !dashboard) {
+    return <TransactionQueryState type="error" />;
+  }
 
   const cards: StatCardData[] = [
-    { label: t("dash.balance"), value: summary.balance, icon: Wallet, color: "primary" },
-    { label: t("dash.income"), value: summary.totalIncome, icon: ArrowDownLeft, color: "success" },
-    { label: t("dash.expenses"), value: summary.totalExpense, icon: ArrowUpRight, color: "accent" },
-    { label: t("dash.savings"), value: summary.balance, icon: TrendingUp, color: "primary" },
+    { label: t("dash.balance"), value: dashboard.summary.formattedBalance, icon: Wallet, color: "primary" },
+    { label: t("dash.income"), value: dashboard.summary.formattedTotalIncome, icon: ArrowDownLeft, color: "success" },
+    { label: t("dash.expenses"), value: dashboard.summary.formattedTotalExpense, icon: ArrowUpRight, color: "accent" },
+    { label: t("dash.savings"), value: dashboard.summary.formattedSavings, icon: TrendingUp, color: "primary" },
   ];
 
   const handleDialogOpenChange = (isOpen: boolean) => {
     if (!isOpen) closeDialog();
   };
 
-  const handleUpdateTransaction = (values: TransactionFormValues) => {
+  const handleUpdateTransaction = (values: TransactionFormValues, attachment: File | null) => {
     if (!selectedTransaction) return;
-    updateTransaction(selectedTransaction.id, values);
+    updateTransaction.mutate({ transactionId: selectedTransaction.id, input: values, attachment });
   };
 
   const handleDeleteTransaction = () => {
     if (!selectedTransaction) return;
-    deleteTransaction(selectedTransaction.id);
+    deleteTransaction.mutate(selectedTransaction.id);
+  };
+
+  const handleCreateTransaction = (values: TransactionFormValues, attachment: File | null) => {
+    createTransaction.mutate({ input: values, attachment });
   };
 
   return (
@@ -120,7 +136,7 @@ export default function OverviewPage() {
               <StatIcon as={card.icon} $tone={card.color} size={16} />
               <StatLabel>{card.label}</StatLabel>
             </StatHeader>
-            <StatValue>R$ {card.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</StatValue>
+            <StatValue>{card.value}</StatValue>
           </StatPanel>
         ))}
       </StatsGrid>
@@ -134,10 +150,14 @@ export default function OverviewPage() {
 
       <PageStack $gap="1rem">
         <CardTitle>{t("dash.recent")}</CardTitle>
-        <TransactionTable data={transactions.slice(0, 5)} onView={openDetails} onEdit={openEdit} onDelete={openDelete} />
+        {dashboard.recentTransactions.length === 0 ? (
+          <TransactionQueryState type="empty" />
+        ) : (
+          <TransactionTable data={dashboard.recentTransactions} onView={openDetails} onEdit={openEdit} onDelete={openDelete} />
+        )}
       </PageStack>
 
-      <TransactionFormModal mode="create" open={dialog === "create"} onOpenChange={handleDialogOpenChange} onSubmit={addTransaction} />
+      <TransactionFormModal mode="create" open={dialog === "create"} onOpenChange={handleDialogOpenChange} onSubmit={handleCreateTransaction} />
       <TransactionFormModal
         mode="edit"
         open={dialog === "edit"}

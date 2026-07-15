@@ -6,5 +6,5 @@ export interface StatCardData {
   color: StatTone;
   icon: LucideIcon;
   label: string;
-  value: number;
+  value: string;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { type ChangeEvent, useDeferredValue, useEffect, useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCategorySuggestionQuery } from "@/features/transactions/hooks";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -34,19 +36,29 @@ import {
   transactionTypeOptions,
   type TransactionFormValues,
 } from "./schema";
-import { Field, FieldError, Form, FormGrid } from "./styled";
+import { Field, FieldError, FieldHint, Form, FormGrid } from "./styled";
 
 export function TransactionFormModal({
+  "data-testid": dataTestId,
   mode,
   open,
   transaction,
   onOpenChange,
   onSubmit,
 }: ITransactionFormModalProps) {
+  const { accessToken } = useAuth();
+  const [attachment, setAttachment] = useState<File | null>(null);
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
     defaultValues: getDefaultTransactionFormValues(),
   });
+  const description = useDeferredValue(form.watch("description"));
+  const type = form.watch("type");
+  const suggestionQuery = useCategorySuggestionQuery(
+    accessToken,
+    { description, type },
+    open && description.trim().length >= 3,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -56,11 +68,21 @@ export function TransactionFormModal({
         ? getTransactionFormValues(transaction)
         : getDefaultTransactionFormValues(),
     );
+    setAttachment(null);
   }, [form, mode, open, transaction]);
 
+  useEffect(() => {
+    if (!suggestionQuery.data) return;
+    form.setValue("categoryId", suggestionQuery.data.data.id, { shouldValidate: true });
+  }, [form, suggestionQuery.data]);
+
   const handleSubmit: SubmitHandler<TransactionFormValues> = (values) => {
-    onSubmit(values);
+    onSubmit(values, attachment);
     onOpenChange(false);
+  };
+
+  const handleAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setAttachment(event.target.files?.item(0) ?? null);
   };
 
   const title = mode === "create" ? "Nova Transação" : "Editar Transação";
@@ -68,7 +90,7 @@ export function TransactionFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent data-testid={dataTestId}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>Preencha os dados abaixo.</DialogDescription>
@@ -115,7 +137,7 @@ export function TransactionFormModal({
               <Label>Categoria</Label>
               <Controller
                 control={form.control}
-                name="category"
+                name="categoryId"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger aria-label="Categoria">
@@ -123,15 +145,20 @@ export function TransactionFormModal({
                     </SelectTrigger>
                     <SelectContent>
                       {transactionCategoryOptions.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               />
-              <FieldError>{form.formState.errors.category?.message}</FieldError>
+              <FieldError>{form.formState.errors.categoryId?.message}</FieldError>
+              {suggestionQuery.data && (
+                <FieldHint role="status">
+                  Categoria sugerida automaticamente: {suggestionQuery.data.data.name}.
+                </FieldHint>
+              )}
             </Field>
           </FormGrid>
 
@@ -181,6 +208,17 @@ export function TransactionFormModal({
               )}
             />
             <FieldError>{form.formState.errors.status?.message}</FieldError>
+          </Field>
+
+          <Field>
+            <Label htmlFor={`${mode}-transaction-attachment`}>Anexo (opcional)</Label>
+            <Input
+              id={`${mode}-transaction-attachment`}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={handleAttachmentChange}
+            />
+            <FieldHint>PDF, JPEG ou PNG de até 5 MB.</FieldHint>
           </Field>
 
           <DialogFooter>

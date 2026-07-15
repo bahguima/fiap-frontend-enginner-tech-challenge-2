@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
+import { TransactionQueryState } from "@/components/dashboard/TransactionQueryState";
 import { TransactionTable } from "@/components/dashboard/TransactionTable";
-import { monthlyData } from "@/data/transactions";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useTransactions } from "@/contexts/TransactionsContext";
+import { useTransactionsDashboardQuery, useTransactionsQuery } from "@/features/transactions/hooks";
 import { getChartColors, hslVar } from "@/lib/chart-theme";
 import { CardTitle, ChartBox, PageStack, PageSubtitle, PageTitle } from "@/styles/shared";
 
@@ -15,18 +16,20 @@ import { ChartPanel, IncomeValue, SummaryLabel, SummaryPanel } from "./styled";
 export default function IncomePage() {
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const { transactions, summary } = useTransactions();
-  const incomeTransactions = useMemo(() => transactions.filter((transaction) => transaction.type === "income"), [transactions]);
+  const { accessToken } = useAuth();
+  const dashboardQuery = useTransactionsDashboardQuery(accessToken);
+  const transactionsQuery = useTransactionsQuery(accessToken, { page: 1, pageSize: 100, type: "income" });
+  const dashboard = dashboardQuery.data;
 
   const { data: chartData, options: chartOptions } = useMemo(() => {
     const colors = getChartColors(theme);
     return {
       data: {
-        labels: monthlyData.map((item) => item.month),
+        labels: dashboard?.chart.labels ?? [],
         datasets: [
           {
             label: t("dash.income"),
-            data: monthlyData.map((item) => item.income),
+            data: dashboard?.chart.income ?? [],
             borderColor: colors.income,
             backgroundColor: hslVar("--success", 0.18),
             fill: true,
@@ -56,7 +59,15 @@ export default function IncomePage() {
         },
       },
     };
-  }, [theme, t]);
+  }, [dashboard, theme, t]);
+
+  if (dashboardQuery.isPending || transactionsQuery.isPending) {
+    return <TransactionQueryState type="loading" />;
+  }
+
+  if (dashboardQuery.isError || transactionsQuery.isError || !dashboard || !transactionsQuery.data) {
+    return <TransactionQueryState type="error" />;
+  }
 
   return (
     <PageStack>
@@ -67,7 +78,7 @@ export default function IncomePage() {
 
       <SummaryPanel>
         <SummaryLabel>{t("income.total")}</SummaryLabel>
-        <IncomeValue>+R$ {summary.totalIncome.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</IncomeValue>
+        <IncomeValue>+{dashboard.summary.formattedTotalIncome}</IncomeValue>
       </SummaryPanel>
 
       <ChartPanel>
@@ -79,7 +90,11 @@ export default function IncomePage() {
 
       <PageStack $gap="1rem">
         <CardTitle>{t("income.transactions")}</CardTitle>
-        <TransactionTable data={incomeTransactions} />
+        {transactionsQuery.data.data.length === 0 ? (
+          <TransactionQueryState type="empty" />
+        ) : (
+          <TransactionTable data={transactionsQuery.data.data} />
+        )}
       </PageStack>
     </PageStack>
   );

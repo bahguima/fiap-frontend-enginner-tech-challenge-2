@@ -1,7 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, XCircle } from "lucide-react";
 import styled from "styled-components";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import type { Transaction } from "@/data/transactions";
+import type { Transaction } from "@/api/contracts";
 
 import type { HeaderCellAlign } from "./interface";
 

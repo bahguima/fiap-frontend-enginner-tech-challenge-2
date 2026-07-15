@@ -39,9 +39,9 @@ export default function LoginPage() {
   const { t } = useLanguage();
   const router = useRouter();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (login(email, password)) {
+    if (await login(email, password)) {
       router.push("/dashboard");
     } else {
       setError(true);

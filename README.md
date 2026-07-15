@@ -1,6 +1,6 @@
 # FIAP Front-End Engineering Tech Challenge 1
 
-Aplicacao web de banking digital desenvolvida com Next.js, React e TypeScript. O projeto apresenta uma experiencia completa para o ByteBank, com landing page, login demonstrativo, dashboard financeiro, extrato, entradas, saidas, perfil, tema claro/escuro, internacionalizacao local e gerenciamento de transacoes em memoria.
+Aplicação web de banking digital desenvolvida com Next.js, React e TypeScript. O shell e o dashboard são aplicações Next.js independentes, integradas por rotas com Multi-Zones e apoiadas por contratos REST mockados com MSW.
 
 ## Sumario
 
@@ -20,7 +20,7 @@ Aplicacao web de banking digital desenvolvida com Next.js, React e TypeScript. O
 
 ## Sobre o projeto
 
-O ByteBank simula uma plataforma de controle financeiro pessoal. A aplicacao usa dados locais para demonstrar fluxos de autenticacao, visualizacao de indicadores, listagem de transacoes e operacoes de criacao, edicao e exclusao de movimentacoes.
+O ByteBank simula uma plataforma de controle financeiro pessoal. A aplicação usa TanStack Query e a mesma interface REST nos clientes e handlers MSW para demonstrar autenticação, indicadores e operações com transações.
 
 O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componentizada, testavel e preparada para evolucao.
 
@@ -51,9 +51,8 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 
 ### Estado, formularios e validacao
 
-- **React Context API**: controle local de autenticacao, tema, idioma e transacoes.
-- **useReducer**: gerenciamento das operacoes de transacoes.
-- **@tanstack/react-query**: base preparada para dados assincronos e cache de API.
+- **React Context API**: controle local de autenticação, tema e idioma.
+- **@tanstack/react-query**: estado de servidor, cache de API, queries e mutations.
 - **react-hook-form**: construcao de formularios.
 - **zod**: validacao de schemas.
 - **@hookform/resolvers**: integracao entre `react-hook-form` e `zod`.
@@ -61,23 +60,15 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 ### UI e experiencia
 
 - **Radix UI**: componentes acessiveis de baixo nivel.
-- **Primitivos Radix instalados**: accordion, alert dialog, aspect ratio, avatar, checkbox, collapsible, context menu, dialog, dropdown menu, hover card, label, menubar, navigation menu, popover, progress, radio group, scroll area, select, separator, slider, slot, switch, tabs, toast, toggle, toggle group e tooltip.
+- **Primitivos Radix instalados**: aspect ratio, collapsible, dialog, dropdown menu, label, select, separator, slot, toast e tooltip.
 - **lucide-react**: biblioteca de icones.
 - **framer-motion**: animacoes.
 - **sonner**: notificacoes/toasts.
-- **cmdk**: componentes de comando e busca.
-- **vaul**: drawers e interacoes de painel.
-- **input-otp**: campos de codigo/OTP.
-- **embla-carousel-react**: carrosseis.
-- **react-day-picker**: selecao de datas.
-- **react-resizable-panels**: paineis redimensionaveis.
 
 ### Dados e visualizacao
 
-- **recharts**: graficos declarativos em React.
 - **chart.js**: motor de graficos.
 - **react-chartjs-2**: integracao entre React e Chart.js.
-- **date-fns**: utilitarios para datas.
 
 ### Qualidade e documentacao visual
 
@@ -102,6 +93,7 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 ```text
 .
 |-- .storybook/                 # Configuracao do Storybook
+|-- dashboard-remote/           # Zona Next.js independente do dashboard
 |-- public/                     # Arquivos publicos
 |-- src/
 |   |-- app/                    # Rotas do Next.js App Router
@@ -146,7 +138,22 @@ Instale as dependencias:
 npm install
 ```
 
-Inicie o servidor de desenvolvimento:
+Instale também as dependências independentes do dashboard:
+
+```bash
+cd dashboard-remote
+npm install
+cd ..
+```
+
+Inicie o dashboard remoto em um terminal:
+
+```bash
+cd dashboard-remote
+npm run dev
+```
+
+Inicie o shell em outro terminal. `DASHBOARD_REMOTE_URL` usa `http://localhost:3001` por padrão e pode ser sobrescrita no ambiente:
 
 ```bash
 npm run dev
@@ -173,11 +180,8 @@ Senha: 123
 | ---------------------- | ---------------------- |
 | `/`                    | Landing page           |
 | `/login`               | Tela de login          |
-| `/dashboard`           | Visao geral financeira |
-| `/dashboard/statement` | Extrato de transacoes  |
-| `/dashboard/income`    | Entradas               |
-| `/dashboard/expenses`  | Saidas                 |
-| `/dashboard/profile`   | Perfil do usuario      |
+| `/dashboard`           | Zona independente do dashboard |
+| `/dashboard/*`         | Subrotas encaminhadas ao dashboard remoto |
 
 ## Storybook
 
@@ -275,9 +279,54 @@ http://localhost:3000
 - Os estilos globais ficam em `src/styles/global.ts`.
 - O SSR do `styled-components` e tratado por `src/lib/styled-components-registry.tsx`.
 - O alias `@/` aponta para `src/`.
-- As transacoes iniciais ficam em `src/data/transactions.ts`.
-- Regras de negocio de transacoes ficam em `src/lib/transactions.ts`.
+- Contratos REST, clientes e mocks do shell ficam em `src/api`, `src/lib/http` e `src/mocks`.
+- O dashboard mantém configuração, providers, contrato REST, mocks e testes próprios em `dashboard-remote`.
+- `/dashboard`, `/dashboard/*` e `/dashboard-assets/*` são encaminhados pelo shell com rewrites definidos em `next.config.mjs`.
 - Contextos globais ficam em `src/contexts`.
 - Componentes interativos devem declarar `"use client"` no proprio arquivo de entrada quando forem boundaries reutilizaveis do App Router.
 - O Storybook usa React/Webpack 5 com SWC e runtime automatico do React.
 - O diretorio `storybook-static/` e um artefato gerado e fica ignorado no Git e no ESLint.
+
+## Execução com Docker
+
+Os dois serviços usam builds multi-stage e imagens de produção `standalone`. O shell publica a porta 3000 e encaminha `/dashboard`, `/dashboard/*` e `/dashboard-assets/*` para o serviço `dashboard-remote` na porta 3001.
+
+As variáveis possuem valores padrão seguros no `compose.yaml`. Para inspecionar ou alterar os valores sem adicionar credenciais ao código, use `.env.docker.example` como arquivo de ambiente.
+
+Valide a configuração:
+
+```powershell
+docker compose --env-file .env.docker.example config
+```
+
+Construa cada imagem de forma independente:
+
+```powershell
+docker build --file Dockerfile --tag bytebank-shell:local .
+docker build --file dashboard-remote/Dockerfile --tag bytebank-dashboard-remote:local .
+```
+
+Construa e inicie os dois serviços pelo Compose:
+
+```powershell
+docker compose --env-file .env.docker.example build
+docker compose --env-file .env.docker.example up --detach
+docker compose --env-file .env.docker.example ps
+```
+
+Verifique o shell, o dashboard direto e o dashboard pelo shell:
+
+```powershell
+Invoke-WebRequest http://localhost:3000
+Invoke-WebRequest http://localhost:3001
+Invoke-WebRequest http://localhost:3000/dashboard
+```
+
+A validação visual de `http://localhost:3000/dashboard` também confirma o carregamento dos assets em `/dashboard-assets/*` e das respostas REST interceptadas pelo MSW.
+
+Consulte os logs e encerre os serviços com:
+
+```powershell
+docker compose --env-file .env.docker.example logs --follow
+docker compose --env-file .env.docker.example down
+```

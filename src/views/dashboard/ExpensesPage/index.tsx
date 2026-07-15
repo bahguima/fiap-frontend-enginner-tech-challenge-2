@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
+import { TransactionQueryState } from "@/components/dashboard/TransactionQueryState";
 import { TransactionTable } from "@/components/dashboard/TransactionTable";
-import { monthlyData } from "@/data/transactions";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useTransactions } from "@/contexts/TransactionsContext";
+import { useTransactionsDashboardQuery, useTransactionsQuery } from "@/features/transactions/hooks";
 import { getChartColors, hslVar } from "@/lib/chart-theme";
 import { CardTitle, ChartBox, PageStack, PageSubtitle, PageTitle } from "@/styles/shared";
 
@@ -15,18 +16,20 @@ import { ChartPanel, ExpenseValue, SummaryLabel, SummaryPanel } from "./styled";
 export default function ExpensesPage() {
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const { transactions, summary } = useTransactions();
-  const expenseTransactions = useMemo(() => transactions.filter((transaction) => transaction.type === "expense"), [transactions]);
+  const { accessToken } = useAuth();
+  const dashboardQuery = useTransactionsDashboardQuery(accessToken);
+  const transactionsQuery = useTransactionsQuery(accessToken, { page: 1, pageSize: 100, type: "expense" });
+  const dashboard = dashboardQuery.data;
 
   const { data: chartData, options: chartOptions } = useMemo(() => {
     const colors = getChartColors(theme);
     return {
       data: {
-        labels: monthlyData.map((item) => item.month),
+        labels: dashboard?.chart.labels ?? [],
         datasets: [
           {
             label: t("dash.expenses"),
-            data: monthlyData.map((item) => item.expense),
+            data: dashboard?.chart.expense ?? [],
             borderColor: colors.expense,
             backgroundColor: hslVar("--destructive", 0.18),
             fill: true,
@@ -56,7 +59,15 @@ export default function ExpensesPage() {
         },
       },
     };
-  }, [theme, t]);
+  }, [dashboard, theme, t]);
+
+  if (dashboardQuery.isPending || transactionsQuery.isPending) {
+    return <TransactionQueryState type="loading" />;
+  }
+
+  if (dashboardQuery.isError || transactionsQuery.isError || !dashboard || !transactionsQuery.data) {
+    return <TransactionQueryState type="error" />;
+  }
 
   return (
     <PageStack>
@@ -67,7 +78,7 @@ export default function ExpensesPage() {
 
       <SummaryPanel>
         <SummaryLabel>{t("expenses.total")}</SummaryLabel>
-        <ExpenseValue>-R$ {summary.totalExpense.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</ExpenseValue>
+        <ExpenseValue>-{dashboard.summary.formattedTotalExpense}</ExpenseValue>
       </SummaryPanel>
 
       <ChartPanel>
@@ -79,7 +90,11 @@ export default function ExpensesPage() {
 
       <PageStack $gap="1rem">
         <CardTitle>{t("expenses.transactions")}</CardTitle>
-        <TransactionTable data={expenseTransactions} />
+        {transactionsQuery.data.data.length === 0 ? (
+          <TransactionQueryState type="empty" />
+        ) : (
+          <TransactionTable data={transactionsQuery.data.data} />
+        )}
       </PageStack>
     </PageStack>
   );
