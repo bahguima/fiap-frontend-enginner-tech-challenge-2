@@ -1,0 +1,16 @@
+.git
+.github
+**/.next
+**/.nx
+**/.swc
+**/coverage
+**/node_modules
+**/dist
+**/*.log
+**/*.local
+*.tsbuildinfo
+.storybook
+dashboard-remote
+storybook-static
+.env
+.env.docker

@@ -1,0 +1,66 @@
+name: bytebank
+
+services:
+  institutional:
+    image: bytebank/institutional:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/institutional/Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+    ports:
+      - "${INSTITUTIONAL_PORT:-8101}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  dashboard:
+    image: bytebank/dashboard:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        SHELL_PUBLIC_URL: ${SHELL_PUBLIC_URL:-http://127.0.0.1:4200}
+    ports:
+      - "${DASHBOARD_PORT:-8102}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  shell:
+    image: bytebank/shell:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/shell/Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        NEXT_PUBLIC_API_MOCKING: disabled
+        NEXT_PUBLIC_API_MOCK_DELAY_MS: ${NEXT_PUBLIC_API_MOCK_DELAY_MS:-150}
+        INSTITUTIONAL_REMOTE_URL: ${INSTITUTIONAL_REMOTE_URL:-http://127.0.0.1:8101/remoteEntry.js}
+        DASHBOARD_REMOTE_URL: ${DASHBOARD_REMOTE_URL:-http://127.0.0.1:8102/remoteEntry.js}
+    depends_on:
+      institutional:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    ports:
+      - "${SHELL_PORT:-4200}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped

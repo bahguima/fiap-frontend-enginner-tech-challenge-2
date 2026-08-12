@@ -1,18 +1,50 @@
 import nextJest from "next/jest.js";
 
 const createJestConfig = nextJest({
-  dir: "./",
+  dir: "./apps/banking",
 });
 
 const customJestConfig = {
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@banking/shared/api-client$":
+      "<rootDir>/libs/shared/api-client/src/index.ts",
+    "^@banking/shared/api-client/(.*)$":
+      "<rootDir>/libs/shared/api-client/src/$1",
+    "^@banking/shared/auth$":
+      "<rootDir>/libs/shared/auth/src/index.ts",
+    "^@banking/shared/query$":
+      "<rootDir>/libs/shared/query/src/index.ts",
+    "^@banking/shared/testing/(.*)$":
+      "<rootDir>/libs/shared/testing/src/$1",
+    "^@banking/shared/types$":
+      "<rootDir>/libs/shared/types/src/index.ts",
+    "^@banking/shared/types/(.*)$":
+      "<rootDir>/libs/shared/types/src/$1",
+    "^@banking/shared/ui$": "<rootDir>/libs/shared/ui/src/index.ts",
+    "^@banking/shared/ui/(.*)$":
+      "<rootDir>/libs/shared/ui/src/$1",
+    "^@dashboard/(.*)$": "<rootDir>/apps/dashboard/src/$1",
+    "^@institutional/(.*)$": "<rootDir>/apps/institutional/src/$1",
+    "^@/(.*)$": "<rootDir>/apps/banking/src/$1",
   },
-  setupFilesAfterEnv: ["<rootDir>/src/test/setup.ts"],
+  setupFiles: [
+    "<rootDir>/libs/shared/testing/src/setup/polyfills.ts",
+    "<rootDir>/libs/shared/testing/src/setup/fetch-polyfills.ts",
+  ],
+  setupFilesAfterEnv: [
+    "<rootDir>/libs/shared/testing/src/setup/setup.ts",
+  ],
   testEnvironment: "jest-environment-jsdom",
-  testMatch: ["<rootDir>/src/**/*.{test,spec}.{ts,tsx}"],
+  testEnvironmentOptions: {
+    customExportConditions: [],
+  },
+  testMatch: [
+    "<rootDir>/apps/**/*.{test,spec}.{ts,tsx}",
+    "<rootDir>/libs/**/*.{test,spec}.{ts,tsx}",
+  ],
   testPathIgnorePatterns: [
-    "<rootDir>/.next/",
+    "<rootDir>/apps/banking/.next/",
+    "<rootDir>/apps/shell-e2e/",
     "<rootDir>/node_modules/",
   ],
 };

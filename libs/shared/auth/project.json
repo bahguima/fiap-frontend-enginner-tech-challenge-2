@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "shared-auth",
+  "sourceRoot": "libs/shared/auth/src",
+  "projectType": "library",
+  "tags": ["type:shared", "scope:shared", "layer:feature"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared/auth --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p libs/shared/auth/tsconfig.json"
+      }
+    }
+  }
+}

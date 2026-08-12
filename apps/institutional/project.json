@@ -1,0 +1,43 @@
+{
+  "name": "institutional",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/institutional/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:institutional"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "rspack serve --mode=development",
+        "cwd": "apps/institutional"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "rspack build --mode=production",
+        "cwd": "apps/institutional"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint apps/institutional --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/institutional/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config jest.config.mjs apps/institutional --runInBand"
+      }
+    }
+  }
+}

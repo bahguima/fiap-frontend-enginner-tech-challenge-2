@@ -1,0 +1,43 @@
+{
+  "name": "dashboard",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/dashboard/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:dashboard"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "rspack serve --mode=development",
+        "cwd": "apps/dashboard"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "rspack build --mode=production",
+        "cwd": "apps/dashboard"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint apps/dashboard --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/dashboard/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config jest.config.mjs apps/dashboard --runInBand"
+      }
+    }
+  }
+}

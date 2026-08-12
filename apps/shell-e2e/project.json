@@ -1,0 +1,22 @@
+{
+  "name": "shell-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/shell-e2e/src",
+  "projectType": "application",
+  "implicitDependencies": ["shell", "institutional", "dashboard"],
+  "tags": ["type:e2e", "scope:shell"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint apps/shell-e2e --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/shell-e2e/tsconfig.json"
+      }
+    }
+  }
+}

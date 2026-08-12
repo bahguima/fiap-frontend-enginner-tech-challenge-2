@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "shared-testing",
+  "sourceRoot": "libs/shared/testing/src",
+  "projectType": "library",
+  "tags": ["type:shared", "scope:shared", "layer:testing"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared/testing --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p libs/shared/testing/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config jest.config.mjs libs/shared/testing --runInBand"
+      }
+    }
+  }
+}

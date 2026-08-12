@@ -1,6 +1,6 @@
 # FIAP Front-End Engineering Tech Challenge 1
 
-Aplicacao web de banking digital desenvolvida com Next.js, React e TypeScript. O projeto apresenta uma experiencia completa para o ByteBank, com landing page, login demonstrativo, dashboard financeiro, extrato, entradas, saidas, perfil, tema claro/escuro, internacionalizacao local e gerenciamento de transacoes em memoria.
+Aplicacao web de banking digital desenvolvida em um monorepo Nx com Next.js, React e TypeScript. A composicao incremental usa Module Federation exclusivamente entre aplicacoes React: `shell` como host e `institutional` e `dashboard` como remotes.
 
 ## Sumario
 
@@ -8,6 +8,7 @@ Aplicacao web de banking digital desenvolvida com Next.js, React e TypeScript. O
 - [Funcionalidades](#funcionalidades)
 - [Tecnologias](#tecnologias)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Arquitetura](#arquitetura)
 - [Requisitos](#requisitos)
 - [Como rodar o projeto](#como-rodar-o-projeto)
 - [Credenciais de demonstracao](#credenciais-de-demonstracao)
@@ -20,7 +21,7 @@ Aplicacao web de banking digital desenvolvida com Next.js, React e TypeScript. O
 
 ## Sobre o projeto
 
-O ByteBank simula uma plataforma de controle financeiro pessoal. A aplicacao usa dados locais para demonstrar fluxos de autenticacao, visualizacao de indicadores, listagem de transacoes e operacoes de criacao, edicao e exclusao de movimentacoes.
+O ByteBank simula uma plataforma de controle financeiro pessoal. A aplicação consome contratos REST mockados por MSW e usa TanStack Query para demonstrar autenticação, indicadores, listagem de transações e operações de criação, edição e exclusão de movimentações.
 
 O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componentizada, testavel e preparada para evolucao.
 
@@ -42,8 +43,10 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 
 ### Base da aplicacao
 
-- **Next.js 14**: framework React com App Router.
+- **Next.js 14**: framework do app legado `banking`, preservado durante a migracao.
 - **React 18**: biblioteca principal para construcao da interface.
+- **Nx**: grafo de projetos, limites de dependencia, cache e orquestracao.
+- **Module Federation + Rspack**: composicao dinamica dos apps React standalone.
 - **React DOM**: renderizacao da aplicacao no navegador.
 - **TypeScript**: tipagem estatica do codigo.
 - **styled-components**: estilizacao por componentes e SSR via registry customizado.
@@ -51,9 +54,9 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 
 ### Estado, formularios e validacao
 
-- **React Context API**: controle local de autenticacao, tema, idioma e transacoes.
-- **useReducer**: gerenciamento das operacoes de transacoes.
-- **@tanstack/react-query**: base preparada para dados assincronos e cache de API.
+- **React Context API**: restrita a autenticacao, tema, idioma e estado visual.
+- **@tanstack/react-query**: solucao aprovada para todo estado de servidor.
+- **MSW**: API REST mockada em desenvolvimento e testes.
 - **react-hook-form**: construcao de formularios.
 - **zod**: validacao de schemas.
 - **@hookform/resolvers**: integracao entre `react-hook-form` e `zod`.
@@ -102,27 +105,42 @@ O objetivo do projeto e demonstrar uma arquitetura front-end moderna, componenti
 ```text
 .
 |-- .storybook/                 # Configuracao do Storybook
-|-- public/                     # Arquivos publicos
-|-- src/
-|   |-- app/                    # Rotas do Next.js App Router
-|   |-- components/             # Componentes reutilizaveis
-|   |   |-- dashboard/          # Componentes do dashboard
-|   |   |-- form/               # Formularios
-|   |   |-- landing/            # Secoes da landing page
-|   |   `-- ui/                 # Componentes de UI base
-|   |-- contexts/               # Contextos globais
-|   |-- data/                   # Dados mockados
-|   |-- hooks/                  # Hooks customizados
-|   |-- lib/                    # Regras e utilitarios de negocio
-|   |-- styles/                 # Estilos globais e compartilhados
-|   |-- test/                   # Configuracao de testes
-|   `-- views/                  # Views por pagina/fluxo
+|-- apps/
+|   |-- banking/                # Aplicacao Next.js atual
+|   |   |-- public/             # Arquivos publicos
+|   |   |-- src/
+|   |   |   |-- app/            # Rotas do App Router
+|   |   |   |-- components/     # Componentes especificos do app
+|   |   |   |-- contexts/       # Tema, idioma e estado visual
+|   |   |   |-- features/       # Hooks e query keys por dominio
+|   |   |   `-- views/          # Views por pagina/fluxo
+|   |   |-- next.config.mjs
+|   |   `-- project.json
+|   |-- shell/                  # Host/consumer React, porta 4200
+|   |-- institutional/          # Remote/provider React, porta 8101
+|   `-- dashboard/              # Remote/provider React, porta 8102
+|-- docs/                       # Arquitetura e inventario de divida tecnica
+|-- libs/shared/
+|   |-- api-client/             # Cliente REST tipado
+|   |-- auth/                   # Autenticacao global
+|   |-- query/                  # Configuracao TanStack Query
+|   |-- testing/                # MSW, fixtures e setup Jest
+|   |-- types/                  # Contratos compartilhados
+|   `-- ui/                     # Radix UI e styled-components
 |-- eslint.config.js            # Configuracao do ESLint
 |-- jest.config.mjs             # Configuracao do Jest
-|-- next.config.mjs             # Configuracao do Next.js
+|-- nx.json                     # Cache e plugins do Nx
 |-- package.json                # Scripts e dependencias
-`-- tsconfig.json               # Configuracao do TypeScript
+`-- tsconfig.base.json          # Aliases compartilhados
 ```
+
+## Arquitetura
+
+As decisoes definitivas e os limites entre Context API, TanStack Query e MSW estao em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+O fluxo de transacoes usa TanStack Query e contratos REST mockados por MSW. O Module Federation conecta somente os tres apps React standalone. React, React DOM, styled-components e TanStack Query sao singletons; o `QueryClient` e a autenticacao da composicao existem somente no shell.
+
+O app Next.js `banking` permanece independente como compatibilidade durante a migração. A aplicação federada completa é composta pelo shell: landing e login vêm de `institutional`; dashboard, rotas e análises financeiras vêm de `dashboard`.
 
 ## Requisitos
 
@@ -146,16 +164,46 @@ Instale as dependencias:
 npm install
 ```
 
-Inicie o servidor de desenvolvimento:
+Copie `.env.example` para `.env.local` e ajuste a infraestrutura REST do app Next.js:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=
+NEXT_PUBLIC_API_MOCKING=enabled
+NEXT_PUBLIC_API_MOCK_DELAY_MS=150
+```
+
+Para builds federados em outros ambientes, forneca as URLs no processo de build:
+
+```text
+INSTITUTIONAL_REMOTE_URL=https://institucional.exemplo/remoteEntry.js
+DASHBOARD_REMOTE_URL=https://dashboard.exemplo/remoteEntry.js
+```
+
+`NEXT_PUBLIC_API_MOCKING=enabled` inicia o MSW somente em desenvolvimento. Use
+`disabled` ou remova a variavel para consumir a API configurada. Nos testes, o
+MSW e iniciado pelo Jest e requests sem handler provocam falha.
+
+Os handlers aceitam `x-mock-error: true` (ou `?mockError=true`) para simular erro
+e `x-mock-delay-ms` para sobrescrever a latencia de uma requisicao.
+
+Inicie shell e remotes. O Nx limita o startup a uma compilacao por vez para reduzir o pico de memoria, mantendo os tres servidores ativos:
 
 ```bash
 npm run dev
 ```
 
-Acesse no navegador:
+Acesse o shell:
 
 ```text
-http://localhost:3000
+http://localhost:4200
+```
+
+Os remotes standalone ficam em `http://localhost:8101` e `http://localhost:8102`.
+
+O app Next.js atual continua disponivel separadamente:
+
+```bash
+npm run dev:banking
 ```
 
 ## Credenciais de demonstracao
@@ -239,8 +287,16 @@ npm run lint
 
 | Script                    | Descricao                                |
 | ------------------------- | ---------------------------------------- |
-| `npm run dev`             | Inicia o Next.js em modo desenvolvimento |
-| `npm run build`           | Gera o build de producao                 |
+| `npm run dev`             | Inicia shell e os dois remotes React     |
+| `npm run dev:banking`     | Inicia o app Next.js atual               |
+| `npm run dev:shell`       | Inicia somente o shell                   |
+| `npm run dev:institutional` | Inicia somente o remote institucional  |
+| `npm run dev:dashboard`   | Inicia somente o remote de dashboard     |
+| `npm run build`           | Gera todos os builds do workspace        |
+| `npm run build:federation` | Gera shell e remotes                    |
+| `npm run build:shell`     | Gera somente o shell                     |
+| `npm run build:institutional` | Gera somente o remote institucional |
+| `npm run build:dashboard` | Gera somente o remote de dashboard       |
 | `npm run start`           | Inicia a aplicacao a partir do build     |
 | `npm run lint`            | Executa o ESLint                         |
 | `npm run typecheck`       | Executa o TypeScript sem emitir arquivos |
@@ -248,36 +304,42 @@ npm run lint
 | `npm run test:watch`      | Executa testes em modo observacao        |
 | `npm run storybook`       | Inicia o Storybook                       |
 | `npm run build-storybook` | Gera o build estatico do Storybook       |
+| `npm run graph`           | Abre o grafo de projetos do Nx           |
 
 ## Build de producao
 
-Gere o build:
+As imagens Docker, o Compose de produção, o ambiente de desenvolvimento com
+mocks REST e todos os comandos estão documentados em
+[`docs/CONTAINERS.md`](docs/CONTAINERS.md).
+
+Gere todos os builds:
 
 ```bash
 npm run build
 ```
 
-Inicie a aplicacao compilada:
+Os builds federados tambem podem ser gerados separadamente:
 
 ```bash
-npm run start
+npm run build:shell
+npm run build:institutional
+npm run build:dashboard
 ```
 
-Acesse:
-
-```text
-http://localhost:3000
-```
+Cada app grava seu artefato em `apps/<nome>/dist`. Os remotes geram `remoteEntry.js`; a hospedagem de cada diretorio pode ser feita de forma independente.
 
 ## Observacoes tecnicas
 
-- O projeto usa Next.js App Router em `src/app`.
-- Os estilos globais ficam em `src/styles/global.ts`.
-- O SSR do `styled-components` e tratado por `src/lib/styled-components-registry.tsx`.
-- O alias `@/` aponta para `src/`.
-- As transacoes iniciais ficam em `src/data/transactions.ts`.
-- Regras de negocio de transacoes ficam em `src/lib/transactions.ts`.
-- Contextos globais ficam em `src/contexts`.
+- O projeto usa Next.js App Router em `apps/banking/src/app`.
+- O shell e os remotes sao aplicacoes React standalone empacotadas com Rspack.
+- O shell carrega apenas o remote da rota atual e isola falhas por remote.
+- Os providers de TanStack Query e autenticacao da federacao existem somente no shell.
+- Os estilos globais ficam em `apps/banking/src/styles/global.ts`.
+- O SSR do `styled-components` e tratado por `apps/banking/src/lib/styled-components-registry.tsx`.
+- O alias `@/` aponta para `apps/banking/src/`; bibliotecas usam `@banking/shared/*`.
+- O fluxo de transacoes consome uma API REST mockada com MSW por TanStack Query.
+- Contextos globais ficam restritos a autenticacao, tema, idioma e estado visual.
+- Os targets `lint`, `typecheck`, `test` e `build` sao orquestrados e armazenados em cache pelo Nx.
 - Componentes interativos devem declarar `"use client"` no proprio arquivo de entrada quando forem boundaries reutilizaveis do App Router.
 - O Storybook usa React/Webpack 5 com SWC e runtime automatico do React.
 - O diretorio `storybook-static/` e um artefato gerado e fica ignorado no Git e no ESLint.

@@ -1,0 +1,66 @@
+name: bytebank-dev
+
+services:
+  institutional:
+    image: bytebank/institutional:dev
+    build:
+      context: .
+      dockerfile: apps/institutional/Dockerfile
+      target: development
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+    ports:
+      - "${INSTITUTIONAL_PORT:-8101}:8101"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8101/remoteEntry.js"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 30s
+
+  dashboard:
+    image: bytebank/dashboard:dev
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      target: development
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+      SHELL_PUBLIC_URL: ${SHELL_PUBLIC_URL:-http://127.0.0.1:4200}
+    ports:
+      - "${DASHBOARD_PORT:-8102}:8102"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8102/remoteEntry.js"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 30s
+
+  shell:
+    image: bytebank/shell:dev
+    build:
+      context: .
+      dockerfile: apps/shell/Dockerfile
+      target: development
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+      NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
+      NEXT_PUBLIC_API_MOCK_DELAY_MS: ${NEXT_PUBLIC_API_MOCK_DELAY_MS:-150}
+      INSTITUTIONAL_REMOTE_URL: ${INSTITUTIONAL_REMOTE_URL:-http://127.0.0.1:8101/remoteEntry.js}
+      DASHBOARD_REMOTE_URL: ${DASHBOARD_REMOTE_URL:-http://127.0.0.1:8102/remoteEntry.js}
+    depends_on:
+      institutional:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    ports:
+      - "${SHELL_PORT:-4200}:4200"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:4200/"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 30s
