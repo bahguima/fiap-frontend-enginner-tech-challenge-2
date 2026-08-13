@@ -1,0 +1,43 @@
+{
+  "name": "shell",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/shell/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:shell"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "rspack serve --mode=development",
+        "cwd": "apps/shell"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "rspack build --mode=production",
+        "cwd": "apps/shell"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint apps/shell tools/module-federation --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/shell/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config jest.config.mjs apps/shell --runInBand"
+      }
+    }
+  }
+}

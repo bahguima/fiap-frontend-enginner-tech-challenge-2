@@ -11,7 +11,10 @@ type Config = StorybookConfig & {
 };
 
 const config: Config = {
-  stories: ["../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  stories: [
+    "../apps/banking/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../libs/shared/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+  ],
   addons: [
     "@storybook/addon-essentials",
     "@storybook/addon-interactions",
@@ -21,7 +24,7 @@ const config: Config = {
     name: "@storybook/react-webpack5",
     options: {},
   },
-  staticDirs: ["../public"],
+  staticDirs: ["../apps/banking/public"],
   swc: (swcConfig) => ({
     ...swcConfig,
     jsc: {
@@ -39,7 +42,11 @@ const config: Config = {
     webpackConfig.resolve ??= {};
     webpackConfig.resolve.alias = {
       ...(webpackConfig.resolve.alias ?? {}),
-      "@": path.resolve(dirname, "../src"),
+      "@banking/shared/ui": path.resolve(
+        dirname,
+        "../libs/shared/ui/src",
+      ),
+      "@": path.resolve(dirname, "../apps/banking/src"),
     };
 
     return webpackConfig;

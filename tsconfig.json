@@ -1,48 +1,13 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2020"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "types": [
-      "jest",
-      "node",
-      "react",
-      "react-dom"
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "strictNullChecks": true
+    "types": ["jest", "node", "react", "react-dom"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "libs/**/*.ts", "libs/**/*.tsx"],
   "exclude": [
-    "dashboard-remote",
-    "node_modules"
+    "node_modules",
+    "dist",
+    "**/.next/**",
+    "**/storybook-static/**"
   ]
 }

@@ -1,7 +1,7 @@
 import type { Preview } from "@storybook/react";
 
-import { ThemeProvider } from "../src/contexts/ThemeContext";
-import { GlobalStyle } from "../src/styles/global";
+import { ThemeProvider } from "../apps/banking/src/contexts/ThemeContext";
+import { GlobalStyle } from "../apps/banking/src/styles/global";
 
 const preview: Preview = {
   parameters: {

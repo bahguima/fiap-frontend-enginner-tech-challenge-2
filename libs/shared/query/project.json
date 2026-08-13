@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "shared-query",
+  "sourceRoot": "libs/shared/query/src",
+  "projectType": "library",
+  "tags": ["type:shared", "scope:shared", "layer:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared/query --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p libs/shared/query/tsconfig.json"
+      }
+    }
+  }
+}

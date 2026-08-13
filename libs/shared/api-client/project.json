@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "shared-api-client",
+  "sourceRoot": "libs/shared/api-client/src",
+  "projectType": "library",
+  "tags": ["type:shared", "scope:shared", "layer:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared/api-client --max-warnings=0"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p libs/shared/api-client/tsconfig.json"
+      }
+    }
+  }
+}

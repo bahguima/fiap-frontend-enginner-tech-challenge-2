@@ -8,12 +8,20 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.nx
 .next
 out
 dist
 dist-ssr
+coverage
 storybook-static
+test-results
+playwright-report
+blob-report
+test-output
+playwright/.cache
 *.local
+.env.docker
 *.tsbuildinfo
 
 # Editor directories and files

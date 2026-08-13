@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/banking/src/*"],
+      "@banking/shared/api-client": [
+        "libs/shared/api-client/src/index.ts"
+      ],
+      "@banking/shared/api-client/*": [
+        "libs/shared/api-client/src/*"
+      ],
+      "@banking/shared/auth": ["libs/shared/auth/src/index.ts"],
+      "@banking/shared/query": ["libs/shared/query/src/index.ts"],
+      "@banking/shared/testing/*": ["libs/shared/testing/src/*"],
+      "@banking/shared/types": ["libs/shared/types/src/index.ts"],
+      "@banking/shared/types/*": ["libs/shared/types/src/*"],
+      "@banking/shared/ui": ["libs/shared/ui/src/index.ts"],
+      "@banking/shared/ui/*": ["libs/shared/ui/src/*"]
+      ,
+      "@dashboard/*": ["apps/dashboard/src/*"],
+      "@institutional/*": ["apps/institutional/src/*"]
+    }
+  }
+}

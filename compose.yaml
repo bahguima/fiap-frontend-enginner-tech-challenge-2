@@ -1,47 +1,66 @@
+name: bytebank
+
 services:
-  dashboard-remote:
+  institutional:
+    image: bytebank/institutional:${IMAGE_TAG:-local}
     build:
       context: .
-      dockerfile: dashboard-remote/Dockerfile
+      dockerfile: apps/institutional/Dockerfile
+      target: production
       args:
-        NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
-    environment:
-      NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
     ports:
-      - "${DASHBOARD_PORT:-3001}:3001"
+      - "${INSTITUTIONAL_PORT:-8101}:8080"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
-      interval: 5s
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
       timeout: 3s
-      retries: 10
-      start_period: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  dashboard:
+    image: bytebank/dashboard:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        SHELL_PUBLIC_URL: ${SHELL_PUBLIC_URL:-http://127.0.0.1:4200}
+    ports:
+      - "${DASHBOARD_PORT:-8102}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
   shell:
+    image: bytebank/shell:${IMAGE_TAG:-local}
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/shell/Dockerfile
+      target: production
       args:
-        DASHBOARD_REMOTE_URL: ${DASHBOARD_REMOTE_URL:-http://dashboard-remote:3001}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
-        NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
-        NEXT_PUBLIC_MSW_SCENARIO: ${NEXT_PUBLIC_MSW_SCENARIO:-success}
-        NEXT_PUBLIC_MSW_DELAY_MS: ${NEXT_PUBLIC_MSW_DELAY_MS:-300}
-    environment:
-      DASHBOARD_REMOTE_URL: ${DASHBOARD_REMOTE_URL:-http://dashboard-remote:3001}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
-      NEXT_PUBLIC_API_MOCKING: ${NEXT_PUBLIC_API_MOCKING:-enabled}
-      NEXT_PUBLIC_MSW_SCENARIO: ${NEXT_PUBLIC_MSW_SCENARIO:-success}
-      NEXT_PUBLIC_MSW_DELAY_MS: ${NEXT_PUBLIC_MSW_DELAY_MS:-300}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        NEXT_PUBLIC_API_MOCKING: disabled
+        NEXT_PUBLIC_API_MOCK_DELAY_MS: ${NEXT_PUBLIC_API_MOCK_DELAY_MS:-150}
+        INSTITUTIONAL_REMOTE_URL: ${INSTITUTIONAL_REMOTE_URL:-http://127.0.0.1:8101/remoteEntry.js}
+        DASHBOARD_REMOTE_URL: ${DASHBOARD_REMOTE_URL:-http://127.0.0.1:8102/remoteEntry.js}
     depends_on:
-      dashboard-remote:
+      institutional:
+        condition: service_healthy
+      dashboard:
         condition: service_healthy
     ports:
-      - "${SHELL_PORT:-3000}:3000"
+      - "${SHELL_PORT:-4200}:8080"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
-      interval: 5s
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
       timeout: 3s
-      retries: 10
-      start_period: 10s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
